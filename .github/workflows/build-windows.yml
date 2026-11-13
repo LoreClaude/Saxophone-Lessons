@@ -34,6 +34,14 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
+      - name: Smoke test the packaged app
+        shell: pwsh
+        run: |
+          $report = Join-Path $env:RUNNER_TEMP 'smoke.json'
+          $p = Start-Process -FilePath 'release\win-unpacked\Saxophonia.exe' -ArgumentList "--smoke-test=$report" -PassThru -Wait
+          if (Test-Path $report) { Get-Content $report }
+          if ($p.ExitCode -ne 0) { throw "Smoke test failed (exit code $($p.ExitCode))" }
+
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:

@@ -306,6 +306,39 @@ ipcMain.handle('app:openExternal', (_e, url: string) => {
 ipcMain.handle('app:version', () => app.getVersion());
 
 // ---------------------------------------------------------------------------
+// CI smoke test: load the packaged UI, check it rendered, write a report, exit
+// ---------------------------------------------------------------------------
+
+function runSmokeTest(reportFile: string) {
+  const errors: string[] = [];
+  const wc = mainWindow!.webContents;
+  wc.on('console-message', (details: any) => {
+    const level = details?.level ?? '';
+    const message = String(details?.message ?? '');
+    if ((level === 'error' || level === 3) && !/Failed to load resource/.test(message)) errors.push(message);
+  });
+  wc.on('render-process-gone', (_e, d) => errors.push(`renderer gone: ${d.reason}`));
+  const finish = async () => {
+    let text = '';
+    let samples = false;
+    try {
+      text = await wc.executeJavaScript('document.getElementById("root")?.innerText || ""');
+      samples = await wc.executeJavaScript('fetch("./samples/sax/A4.mp3").then(r => r.ok && r.headers.get("content-length") !== "0").catch(() => false)');
+    } catch (e) {
+      errors.push(String(e));
+    }
+    const ok = text.includes('Бибоп') && samples && errors.length === 0;
+    fs.writeFileSync(reportFile, JSON.stringify({ ok, rendered: text.slice(0, 200), samples, errors }, null, 2));
+    app.exit(ok ? 0 : 1);
+  };
+  wc.once('did-finish-load', () => setTimeout(finish, 4000));
+  setTimeout(() => {
+    fs.writeFileSync(reportFile, JSON.stringify({ ok: false, errors: ['timeout', ...errors] }));
+    app.exit(2);
+  }, 45_000);
+}
+
+// ---------------------------------------------------------------------------
 // Lifecycle
 // ---------------------------------------------------------------------------
 
@@ -335,6 +368,8 @@ if (!app.requestSingleInstanceLock()) {
       mainWindow?.once('ready-to-show', () => mainWindow?.hide());
       ensureTray();
     }
+    const smokeArg = process.argv.find((a) => a.startsWith('--smoke-test='));
+    if (smokeArg) runSmokeTest(smokeArg.split('=')[1]);
   });
 
   app.on('before-quit', () => {
