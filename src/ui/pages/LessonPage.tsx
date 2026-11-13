@@ -228,7 +228,7 @@ export function Block({ block }: { block: TheoryBlock }) {
                 <b className="display" style={{ fontSize: 20 }}>
                   {fullNoteNameRu(m)}
                 </b>
-                <FingeringDiagram fingering={mainFingering(m)} size={0.9} showLegend={false} />
+                <FingeringDiagram fingering={mainFingering(m)} size={0.9} />
                 <FingeringLegend fingering={mainFingering(m)} />
                 {fingeringsFor(m).length > 1 && <div className="tiny" style={{ color: 'var(--accent-3)' }}>+ {fingeringsFor(m).length - 1} альтернативные</div>}
                 <button className="btn ghost" onClick={() => playDemo({ kind: 'note', note: m })}>

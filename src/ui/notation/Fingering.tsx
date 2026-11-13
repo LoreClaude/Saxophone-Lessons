@@ -1,181 +1,142 @@
-// Saxophone fingering diagrams: a detailed one (with labelled groups of the
-// extra keys) and a mini one for notes.
+// Saxophone fingering diagrams: a drawing of the saxophone with every key in
+// its place (like a printed fingering chart) and a mini one for notes.
+import { useId } from 'react';
 import { KEYS, type Fingering, type SaxKey, extraKeys } from '../../music/fingering';
 
-/** Clear names of the extra keys as shown on the diagram. */
-const EXTRA_LABEL: Partial<Record<SaxKey, string>> = {
-  palmD: 'Ре',
-  palmEb: 'Ми♭',
-  palmF: 'Фа',
-  frontF: 'Фа передний',
-  Gs: 'Соль♯',
-  lowCs: 'До♯ нижний',
-  lowB: 'Си нижний',
-  lowBb: 'Си♭ нижний',
-  sideE: 'Ми высокий',
-  sideC: 'До боковой',
-  sideBb: 'Си♭ боковой',
-  highFs: 'Фа♯ высокий',
-  lowEb: 'Ми♭ нижний',
-  lowC: 'До нижний',
+type Shape =
+  | { kind: 'circle'; cx: number; cy: number; r: number }
+  | { kind: 'oval'; cx: number; cy: number; rx: number; ry: number; rot?: number };
+
+/** Keys of the alto saxophone placed as on a printed fingering chart (viewBox 0 0 240 460), seen as the player sees the instrument. */
+const KEY_SHAPES: Record<SaxKey, Shape> = {
+  // left hand: three big keys with the small bis key between the first two
+  B: { kind: 'circle', cx: 110, cy: 126, r: 13.5 },
+  bis: { kind: 'circle', cx: 113, cy: 150, r: 5 },
+  A: { kind: 'circle', cx: 110, cy: 173, r: 13.5 },
+  G: { kind: 'circle', cx: 110, cy: 212, r: 13.5 },
+  // right hand
+  F: { kind: 'circle', cx: 110, cy: 284, r: 14.5 },
+  E: { kind: 'circle', cx: 110, cy: 322, r: 14.5 },
+  D: { kind: 'circle', cx: 110, cy: 360, r: 14.5 },
+  // octave key (left thumb, on the back) and front F above the first key
+  oct: { kind: 'oval', cx: 86, cy: 152, rx: 6, ry: 9.5 },
+  frontF: { kind: 'oval', cx: 112, cy: 101, rx: 7, ry: 4.2, rot: 12 },
+  // palm keys of the left hand: top left of the body
+  palmD: { kind: 'oval', cx: 92, cy: 70, rx: 4.4, ry: 10, rot: -25 },
+  palmEb: { kind: 'oval', cx: 81, cy: 82, rx: 4.4, ry: 10, rot: -25 },
+  palmF: { kind: 'oval', cx: 80, cy: 102, rx: 4.4, ry: 8.5, rot: -40 },
+  // left little finger table: left of the body, between the hands
+  Gs: { kind: 'oval', cx: 81, cy: 231, rx: 11, ry: 5.2, rot: 8 },
+  lowCs: { kind: 'oval', cx: 85, cy: 246, rx: 7.5, ry: 4.6 },
+  lowB: { kind: 'oval', cx: 85, cy: 260, rx: 7.5, ry: 4.6 },
+  lowBb: { kind: 'oval', cx: 68, cy: 253, rx: 7, ry: 4.6 },
+  // side keys of the right hand: right of the lower keys, towards the bell
+  sideE: { kind: 'oval', cx: 141, cy: 262, rx: 4.4, ry: 9.5, rot: 6 },
+  sideC: { kind: 'oval', cx: 142, cy: 284, rx: 4.4, ry: 9.5, rot: 6 },
+  sideBb: { kind: 'oval', cx: 143, cy: 306, rx: 4.4, ry: 9.5, rot: 6 },
+  highFs: { kind: 'oval', cx: 144, cy: 337, rx: 4.4, ry: 8.5, rot: 6 },
+  // right little finger: bottom right
+  lowEb: { kind: 'oval', cx: 126, cy: 384, rx: 8.5, ry: 5, rot: 18 },
+  lowC: { kind: 'oval', cx: 110, cy: 399, rx: 9.5, ry: 5.5, rot: 18 },
 };
 
-interface Group {
-  title: string;
-  sub: string;
-  x: number;
-  y: number;
-  keys: SaxKey[];
+// Neck, body, bow and bell as one outline (no seams between the parts).
+const SAX_OUTLINE = [
+  'M 62 31 L 84 38.5 Q 101 38.5 101 60 L 101 80',
+  'C 101 92 92.5 94 92.5 106 L 82 392',
+  'A 58 58 0 0 0 198 392 C 200 352 212 314 224 284',
+  'L 162 284 C 166 304 170 340 170 392 A 16 16 0 0 1 138 392',
+  'L 127.5 106 C 127.5 94 119 92 119 80 L 119 58 Q 119 21 86 21 L 64 17 Z',
+].join(' ');
+const MOUTHPIECE = 'M 66 15.5 L 40 13 Q 29 13 27.5 19 L 36 25.5 L 66 32.5 Z';
+
+function KeyShape({ k, on }: { k: SaxKey; on: boolean }) {
+  const s = KEY_SHAPES[k];
+  const paint = {
+    fill: on ? 'var(--accent)' : 'var(--surface-solid)',
+    stroke: on ? 'var(--accent)' : 'var(--muted)',
+    strokeWidth: 2,
+    style: { transition: 'fill .15s, stroke .15s', ...(on ? { filter: 'drop-shadow(0 0 5px var(--glow))' } : {}) },
+  };
+  return (
+    <g>
+      <title>{`${KEYS[k].name} — ${KEYS[k].finger}`}</title>
+      {s.kind === 'circle' ? (
+        <circle cx={s.cx} cy={s.cy} r={s.r} {...paint} />
+      ) : (
+        <ellipse cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} transform={s.rot ? `rotate(${s.rot} ${s.cx} ${s.cy})` : undefined} {...paint} />
+      )}
+    </g>
+  );
 }
 
-// viewBox 0 0 330 410: main stack in the middle, extra keys in labelled boxes.
-const GROUPS: Group[] = [
-  { title: 'ЛАДОНЬ', sub: 'левой руки', x: 6, y: 6, keys: ['palmD', 'palmEb', 'palmF'] },
-  { title: 'МИЗИНЕЦ', sub: 'левой руки', x: 222, y: 100, keys: ['Gs', 'lowCs', 'lowB', 'lowBb'] },
-  { title: 'БОКОВЫЕ', sub: 'ребро правой ладони', x: 222, y: 238, keys: ['sideE', 'sideC', 'sideBb', 'highFs'] },
-  { title: 'МИЗИНЕЦ', sub: 'правой руки', x: 6, y: 300, keys: ['lowEb', 'lowC'] },
-];
-const BOX_W = 102;
-const PILL_H = 20;
-const PILL_GAP = 5;
-const HEAD_H = 32;
-
-const MAIN: { key: SaxKey; y: number; label: string }[] = [
-  { key: 'B', y: 92, label: '1' },
-  { key: 'A', y: 146, label: '2' },
-  { key: 'G', y: 192, label: '3' },
-  { key: 'F', y: 262, label: '4' },
-  { key: 'E', y: 308, label: '5' },
-  { key: 'D', y: 354, label: '6' },
-];
-const CX = 165;
-
-export function FingeringDiagram({ fingering, size = 1, showLegend = true }: { fingering?: Fingering; size?: number; showLegend?: boolean }) {
+/** The saxophone with its keys; pressed keys are filled. No text on the drawing. */
+export function FingeringDiagram({ fingering, size = 1 }: { fingering?: Fingering; size?: number }) {
   const on = new Set(fingering?.keys ?? []);
-  const fillFor = (k: SaxKey) => (on.has(k) ? 'var(--accent)' : 'transparent');
-  const strokeFor = (k: SaxKey) => (on.has(k) ? 'var(--accent)' : 'var(--muted)');
-  const textFor = (k: SaxKey) => (on.has(k) ? '#fff' : 'var(--muted)');
+  const grad = `sax-body-${useId().replace(/:/g, '')}`;
   return (
-    <svg width={330 * size * 0.8} height={410 * size * 0.8} viewBox="0 0 330 410" role="img" aria-label="Аппликатура">
-      {/* body of the instrument */}
-      <rect x={CX - 30} y={40} width={60} height={345} rx={30} fill="none" stroke="var(--border)" strokeWidth="2" />
-      {/* front F above key 1 */}
-      <g>
-        <title>{KEYS.frontF.name} — {KEYS.frontF.finger}</title>
-        <rect x={CX - 22} y={50} width={44} height={16} rx={8} fill={fillFor('frontF')} stroke={strokeFor('frontF')} strokeWidth="2" />
-        <text x={CX} y={62} fontSize="10" fontWeight="700" textAnchor="middle" fill={textFor('frontF')}>
-          Фа пер.
-        </text>
-      </g>
-      {/* main six keys + bis */}
-      {MAIN.map((m) => (
-        <g key={m.key}>
-          <title>{KEYS[m.key].name} — {KEYS[m.key].finger}</title>
-          <circle cx={CX} cy={m.y} r={19} fill={fillFor(m.key)} stroke={strokeFor(m.key)} strokeWidth="2.5" style={on.has(m.key) ? { filter: 'drop-shadow(0 0 6px var(--glow))' } : undefined} />
-          <text x={CX} y={m.y + 6} fontSize="17" fontWeight="800" textAnchor="middle" fill={textFor(m.key)}>
-            {m.label}
-          </text>
-        </g>
+    <svg width={240 * size * 0.8} height={460 * size * 0.8} viewBox="0 0 240 460" role="img" aria-label="Схема нажатия клапанов">
+      <defs>
+        <linearGradient id={grad} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="var(--muted)" stopOpacity="0.12" />
+          <stop offset="0.3" stopColor="var(--muted)" stopOpacity="0.3" />
+          <stop offset="0.62" stopColor="var(--muted)" stopOpacity="0.14" />
+          <stop offset="1" stopColor="var(--muted)" stopOpacity="0.24" />
+        </linearGradient>
+      </defs>
+      <path d={SAX_OUTLINE} fill={`url(#${grad})`} stroke="var(--muted)" strokeWidth="2" strokeLinejoin="round" />
+      <ellipse cx={193} cy={284} rx={31} ry={6} fill="var(--surface-solid)" stroke="var(--muted)" strokeWidth="2" />
+      <path d={MOUTHPIECE} fill="var(--muted)" stroke="var(--muted)" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M 50 14 L 50 29.2 M 55 14.4 L 55 30.4" stroke="var(--surface-solid)" strokeWidth="2.2" />
+      {(Object.keys(KEY_SHAPES) as SaxKey[]).map((k) => (
+        <KeyShape key={k} k={k} on={on.has(k)} />
       ))}
-      <g>
-        <title>{KEYS.bis.name} — {KEYS.bis.finger}</title>
-        <circle cx={CX} cy={119} r={6} fill={fillFor('bis')} stroke={strokeFor('bis')} strokeWidth="2" />
-        {on.has('bis') && (
-          <text x={CX + 12} y={123} fontSize="10" fontWeight="700" fill="var(--accent)">
-            бис
-          </text>
-        )}
-      </g>
-      {/* hands divider */}
-      <line x1={CX - 38} y1={226} x2={CX + 38} y2={226} stroke="var(--muted)" strokeWidth="1.5" strokeDasharray="5 4" />
-      <text x={CX} y={221} fontSize="10" textAnchor="middle" fill="var(--muted)">
-        левая рука ↑
-      </text>
-      <text x={CX} y={238} fontSize="10" textAnchor="middle" fill="var(--muted)">
-        правая рука ↓
-      </text>
-      {/* octave key (left thumb) */}
-      <g>
-        <title>{KEYS.oct.name} — {KEYS.oct.finger}</title>
-        <rect x={6} y={136} width={BOX_W} height={86} rx={12} fill="var(--surface)" stroke={on.has('oct') ? 'var(--accent)' : 'var(--border)'} />
-        <text x={14} y={154} fontSize="11" fontWeight="800" fill="var(--text)">
-          ОКТАВНЫЙ
-        </text>
-        <text x={14} y={167} fontSize="9.5" fill="var(--muted)">
-          большой палец левой
-        </text>
-        <circle cx={57} cy={195} r={15} fill={fillFor('oct')} stroke={strokeFor('oct')} strokeWidth="2.5" />
-        <text x={57} y={200} fontSize="14" fontWeight="800" textAnchor="middle" fill={textFor('oct')}>
-          8
-        </text>
-      </g>
-      {/* groups of extra keys */}
-      {GROUPS.map((g) => {
-        const h = HEAD_H + g.keys.length * (PILL_H + PILL_GAP) + 4;
-        const active = g.keys.some((k) => on.has(k));
-        return (
-          <g key={g.title + g.sub}>
-            <rect x={g.x} y={g.y} width={BOX_W} height={h} rx={12} fill="var(--surface)" stroke={active ? 'var(--accent)' : 'var(--border)'} />
-            <text x={g.x + 8} y={g.y + 15} fontSize="11" fontWeight="800" fill="var(--text)">
-              {g.title}
-            </text>
-            <text x={g.x + 8} y={g.y + 27} fontSize="9.5" fill="var(--muted)">
-              {g.sub}
-            </text>
-            {g.keys.map((k, i) => {
-              const y = g.y + HEAD_H + i * (PILL_H + PILL_GAP);
-              return (
-                <g key={k}>
-                  <title>{KEYS[k].name} — {KEYS[k].finger}</title>
-                  <rect x={g.x + 6} y={y} width={BOX_W - 12} height={PILL_H} rx={10} fill={fillFor(k)} stroke={strokeFor(k)} strokeWidth="1.8" />
-                  <text x={g.x + BOX_W / 2} y={y + 14} fontSize="11" fontWeight="700" textAnchor="middle" fill={textFor(k)}>
-                    {EXTRA_LABEL[k]}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        );
-      })}
-      {showLegend && (
-        <text x={CX} y={402} fontSize="10" textAnchor="middle" fill="var(--muted)">
-          закрашено — нажать
-        </text>
-      )}
     </svg>
   );
 }
 
-/** Plain-language list of everything to press besides the six main keys, one line per finger. */
+const MAIN_FINGER: Partial<Record<SaxKey, string>> = {
+  B: 'указательный',
+  A: 'средний',
+  G: 'безымянный',
+  F: 'указательный',
+  E: 'средний',
+  D: 'безымянный',
+};
+
+const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} и ${xs[xs.length - 1]}` : xs.join(''));
+const PALM_NOTE: Partial<Record<SaxKey, string>> = { palmD: 'ре', palmEb: 'ми-бемоль', palmF: 'фа' };
+
+/** Plain-language list of everything to press besides the six big keys, one line per finger. */
 export function extraKeyInstructions(f?: Fingering): string[] {
   if (!f) return [];
-  const out: string[] = [];
-  if (f.keys.includes('oct')) out.push('Большой палец левой руки — октавный клапан «8»');
-  const byFinger = new Map<string, string[]>();
-  for (const k of extraKeys(f)) {
+  const byFinger = new Map<string, SaxKey[]>();
+  for (const k of [...(f.keys.includes('oct') ? (['oct'] as SaxKey[]) : []), ...extraKeys(f)]) {
     const finger = KEYS[k].finger;
-    byFinger.set(finger, [...(byFinger.get(finger) ?? []), `«${EXTRA_LABEL[k] ?? KEYS[k].label}»`]);
+    byFinger.set(finger, [...(byFinger.get(finger) ?? []), k]);
   }
-  for (const [finger, keys] of byFinger) {
-    const who = finger.charAt(0).toUpperCase() + finger.slice(1);
-    out.push(`${who} — ${keys.length > 1 ? 'клапаны' : 'клапан'} ${keys.join(', ')}`);
-  }
-  return out;
+  return [...byFinger].map(([finger, keys]) => {
+    const palm = keys.filter((k) => PALM_NOTE[k]);
+    const names = keys.filter((k) => !PALM_NOTE[k]).map((k) => KEYS[k].name.toLowerCase());
+    if (palm.length) names.unshift(`${palm.length > 1 ? 'ладонные клапаны' : 'ладонный клапан'} ${andList(palm.map((k) => PALM_NOTE[k]!))}`);
+    return `${finger.charAt(0).toUpperCase()}${finger.slice(1)} — ${andList(names)}`;
+  });
 }
 
-/** Text under a diagram: which main fingers and which extra keys. */
+/** Text under a diagram: which fingers press the big keys and which extra keys are needed. */
 export function FingeringLegend({ fingering }: { fingering?: Fingering }) {
   if (!fingering) return null;
-  const left = (['B', 'A', 'G'] as SaxKey[]).filter((k) => fingering.keys.includes(k)).map((k) => KEYS[k].label);
-  const right = (['F', 'E', 'D'] as SaxKey[]).filter((k) => fingering.keys.includes(k)).map((k) => KEYS[k].label);
+  const fingers = (keys: SaxKey[]) => andList(keys.filter((k) => fingering.keys.includes(k)).map((k) => MAIN_FINGER[k]!));
+  const left = fingers(['B', 'A', 'G']);
+  const right = fingers(['F', 'E', 'D']);
   const extra = extraKeyInstructions(fingering);
   return (
     <div className="small" style={{ textAlign: 'left', maxWidth: 300, margin: '0 auto' }}>
       <div>
-        <b>Левая рука:</b> {left.length ? left.join(' ') : 'все пальцы подняты'}
+        <b>Левая рука:</b> {left || 'пальцы подняты'}
       </div>
       <div>
-        <b>Правая рука:</b> {right.length ? right.join(' ') : 'все пальцы подняты'}
+        <b>Правая рука:</b> {right || 'пальцы подняты'}
       </div>
       {extra.length > 0 && (
         <>

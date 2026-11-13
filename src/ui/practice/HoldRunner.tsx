@@ -291,7 +291,7 @@ export function HoldRunner({ ex, ctx, onFinish }: { ex: HoldEx; ctx: RunContext;
           {!isBreath && <LivePitch target={target} />}
           {target !== null && (
             <div className="card center">
-              <FingeringDiagram fingering={mainFingering(target)} size={0.95} showLegend={false} />
+              <FingeringDiagram fingering={mainFingering(target)} size={0.95} />
               <FingeringLegend fingering={mainFingering(target)} />
             </div>
           )}

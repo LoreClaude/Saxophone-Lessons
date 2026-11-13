@@ -200,7 +200,7 @@ export function NotesRunner({ ex, ctx, onFinish }: { ex: NotesExercise; ctx: Run
             <details className="card">
               <summary style={{ cursor: 'pointer' }}>Подсказка: аппликатура {noteNameRu(item.note)}</summary>
               <div className="center">
-                <FingeringDiagram fingering={mainFingering(item.note)} size={0.95} showLegend={false} />
+                <FingeringDiagram fingering={mainFingering(item.note)} size={0.95} />
                 <FingeringLegend fingering={mainFingering(item.note)} />
               </div>
             </details>

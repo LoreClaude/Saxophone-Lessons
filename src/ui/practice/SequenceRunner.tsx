@@ -422,7 +422,7 @@ export function SequenceRunner({ ex, ctx, onFinish }: { ex: SequenceExercise; ct
             <div className="display" style={{ fontSize: 30, fontWeight: 800 }}>
               {curNote ? noteNameRu(curNote.midi) : '—'}
             </div>
-            {curNote && <FingeringDiagram fingering={mainFingering(curNote.midi)} size={0.95} showLegend={false} />}
+            {curNote && <FingeringDiagram fingering={mainFingering(curNote.midi)} size={0.95} />}
             {curNote && <FingeringLegend fingering={mainFingering(curNote.midi)} />}
           </div>
         </div>
