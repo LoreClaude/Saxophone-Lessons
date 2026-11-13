@@ -15,7 +15,9 @@ export function Onboarding() {
   const [step, setStep] = useState(0);
   const cur = STEPS[step];
   const next = () => setStep((x) => Math.min(STEPS.length - 1, x + 1));
-  useEffect(() => applyTheme(s.theme), [s.theme]);
+  useEffect(() => {
+    applyTheme(s.theme);
+  }, [s.theme]);
 
   return (
     <div style={{ height: '100%', display: 'grid', placeItems: 'center', padding: 20, overflowY: 'auto' }}>

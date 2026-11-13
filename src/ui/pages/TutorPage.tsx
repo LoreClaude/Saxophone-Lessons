@@ -32,7 +32,9 @@ export function TutorPage() {
     db.chat.orderBy('ts').toArray().then(setMsgs);
     aiAvailable().then(setOk);
   }, []);
-  useEffect(() => end.current?.scrollIntoView({ behavior: 'smooth' }), [msgs, streaming]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [msgs, streaming]);
 
   const send = async (text: string) => {
     const t = text.trim();

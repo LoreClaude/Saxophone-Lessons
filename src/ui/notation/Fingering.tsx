@@ -21,19 +21,19 @@ const SHAPES: Record<SaxKey, KeyShape> = {
   bis: { x: 100, y: 102, r: 6, label: '' },
   A: { x: 100, y: 128, r: 16, label: '2' },
   G: { x: 100, y: 170, r: 16, label: '3' },
-  Gs: { x: 150, y: 160, w: 30, h: 14, label: 'Соль♯' },
-  lowCs: { x: 150, y: 180, w: 30, h: 14, label: 'До♯' },
-  lowB: { x: 150, y: 200, w: 30, h: 14, label: 'Си' },
-  lowBb: { x: 150, y: 220, w: 30, h: 14, label: 'Си♭' },
-  sideE: { x: 158, y: 250, w: 14, h: 22, label: 'Ми' },
-  sideC: { x: 158, y: 276, w: 14, h: 22, label: 'До' },
-  sideBb: { x: 158, y: 302, w: 14, h: 22, label: 'Си♭' },
-  highFs: { x: 46, y: 262, w: 26, h: 14, label: 'Фа♯' },
+  Gs: { x: 156, y: 156, w: 38, h: 15, label: 'Соль♯' },
+  lowCs: { x: 156, y: 176, w: 34, h: 15, label: 'До♯' },
+  lowB: { x: 156, y: 196, w: 34, h: 15, label: 'Си' },
+  lowBb: { x: 156, y: 216, w: 34, h: 15, label: 'Си♭' },
+  sideE: { x: 156, y: 262, w: 34, h: 15, label: 'Ми' },
+  sideC: { x: 156, y: 282, w: 34, h: 15, label: 'До' },
+  sideBb: { x: 156, y: 302, w: 34, h: 15, label: 'Си♭' },
+  highFs: { x: 46, y: 262, w: 30, h: 15, label: 'Фа♯' },
   F: { x: 100, y: 236, r: 16, label: '4' },
   E: { x: 100, y: 278, r: 16, label: '5' },
   D: { x: 100, y: 320, r: 16, label: '6' },
-  lowEb: { x: 52, y: 312, w: 30, h: 14, label: 'Ми♭' },
-  lowC: { x: 52, y: 334, w: 30, h: 14, label: 'До' },
+  lowEb: { x: 46, y: 312, w: 34, h: 15, label: 'Ми♭' },
+  lowC: { x: 46, y: 334, w: 34, h: 15, label: 'До' },
 };
 
 export function FingeringDiagram({ fingering, size = 1, showLegend = true }: { fingering?: Fingering; size?: number; showLegend?: boolean }) {
@@ -48,20 +48,17 @@ export function FingeringDiagram({ fingering, size = 1, showLegend = true }: { f
           <text x="4" y="16" fontSize="10" fill="var(--muted)">
             ладонь
           </text>
-          <text x="156" y="148" fontSize="10" fill="var(--muted)" textAnchor="middle">
-            мизинец
+          <text x="156" y="142" fontSize="10" fill="var(--muted)" textAnchor="middle">
+            мизинец Л
           </text>
-          <text x="158" y="242" fontSize="10" fill="var(--muted)" textAnchor="middle">
-            бок
+          <text x="156" y="248" fontSize="10" fill="var(--muted)" textAnchor="middle">
+            боковые П
           </text>
           <text x="46" y="155" fontSize="10" fill="var(--muted)" textAnchor="middle">
             большой
           </text>
-          <text x="186" y="80" fontSize="11" fill="var(--muted)" textAnchor="end">
-            Л
-          </text>
-          <text x="186" y="290" fontSize="11" fill="var(--muted)" textAnchor="end">
-            П
+          <text x="100" y="196" fontSize="10" fill="var(--muted)" textAnchor="middle">
+            левая ↑ · правая ↓
           </text>
         </>
       )}

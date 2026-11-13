@@ -66,7 +66,9 @@ export function App() {
   const levelUp = useToasts((s) => s.levelUp);
   const setLevelUp = useToasts((s) => s.setLevelUp);
 
-  useEffect(() => applyTheme(settings.theme), [settings.theme]);
+  useEffect(() => {
+    applyTheme(settings.theme);
+  }, [settings.theme]);
   useEffect(() => {
     document.documentElement.classList.toggle('no-anim', !settings.animations);
   }, [settings.animations]);
