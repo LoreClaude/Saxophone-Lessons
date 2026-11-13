@@ -38,6 +38,7 @@ await shot('04-home');
 for (const [hash, name] of [
   ['#/lesson/m01-l1', '05-lesson'],
   ['#/lesson/m01-l4', '06-lesson-fingering'],
+  ['#/lesson/m02-l2', '06b-lesson-abc'],
   ['#/tuner', '07-tuner'],
   ['#/metronome', '08-metronome'],
   ['#/fingering', '09-fingering'],
