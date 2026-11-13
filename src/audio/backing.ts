@@ -431,7 +431,7 @@ export function playMelody(score: Score, bpm = score.bpm, opts: Partial<SessionO
 }
 
 /** Plays a single sax note (written pitch) – for fingering chart / demos. */
-export async function playSaxNote(written: number, seconds = 1.2, opts: { vibrato?: boolean; detune?: number } = {}) {
+export async function playSaxNote(written: number, seconds = 1.2, opts: { vibrato?: boolean; detune?: number; scoop?: number } = {}) {
   await audio.ensureContext();
   await instruments.sax.load();
   const t = audio.now() + 0.03;
@@ -439,5 +439,6 @@ export async function playSaxNote(written: number, seconds = 1.2, opts: { vibrat
     velocity: 0.8,
     detuneCents: opts.detune,
     vibrato: opts.vibrato ? { rate: 5.5, cents: 22 } : undefined,
+    scoop: opts.scoop,
   });
 }

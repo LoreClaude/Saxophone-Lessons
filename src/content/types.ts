@@ -17,7 +17,7 @@ export type IllustrationId =
   | 'swing';
 
 export type Demo =
-  | { kind: 'note'; note: number; seconds?: number; vibrato?: boolean; detune?: number }
+  | { kind: 'note'; note: number; seconds?: number; vibrato?: boolean; detune?: number; scoop?: number }
   | { kind: 'abc'; abc: string; bpm?: number; swing?: boolean; style?: BackingStyle; chords?: string; metronome?: boolean }
   | { kind: 'interval'; a: number; b: number; harmonic?: boolean }
   | { kind: 'chord'; notes: number[] }

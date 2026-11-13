@@ -22,7 +22,7 @@ export async function playDemo(d: Demo): Promise<number> {
   switch (d.kind) {
     case 'note': {
       const secs = d.seconds ?? 1.4;
-      const v = await playSaxNote(d.note, secs, { vibrato: d.vibrato, detune: d.detune });
+      const v = await playSaxNote(d.note, secs, { vibrato: d.vibrato, detune: d.detune, scoop: d.scoop });
       current = v;
       return secs;
     }

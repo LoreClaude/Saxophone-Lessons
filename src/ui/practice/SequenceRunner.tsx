@@ -400,7 +400,7 @@ export function SequenceRunner({ ex, ctx, onFinish }: { ex: SequenceExercise; ct
                   <div className="row" style={{ minWidth: 300 }}>
                     <span className="small">Темп</span>
                     <input type="range" min={Math.round(baseBpm * 0.5)} max={Math.round(baseBpm * 1.3)} value={bpm} onChange={(e) => setBpm(Number(e.target.value))} />
-                    <b style={{ width: 70 }}>{bpm} уд/мин</b>
+                    <b style={{ whiteSpace: 'nowrap' }}>{bpm} уд/мин</b>
                   </div>
                   <Toggle on={metronome} onChange={setMetronome} label="Метроном" />
                   {ex.style && ex.style !== 'none' && <Toggle on={backing} onChange={setBacking} label={`Аккомпанемент (${STYLE_NAMES[ex.style]})`} />}
@@ -422,7 +422,7 @@ export function SequenceRunner({ ex, ctx, onFinish }: { ex: SequenceExercise; ct
             <div className="display" style={{ fontSize: 30, fontWeight: 800 }}>
               {curNote ? noteNameRu(curNote.midi) : '—'}
             </div>
-            {curNote && <FingeringDiagram fingering={mainFingering(curNote.midi)} size={0.62} showLegend={false} />}
+            {curNote && <FingeringDiagram fingering={mainFingering(curNote.midi)} size={0.8} showLegend={false} />}
           </div>
         </div>
       </div>

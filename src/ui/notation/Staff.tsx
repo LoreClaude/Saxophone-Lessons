@@ -51,7 +51,7 @@ const STATE_VAR: Record<Exclude<NoteState, null>, string> = {
 };
 
 export const Staff = forwardRef<StaffHandle, Props>(function Staff(
-  { abc, showNames = false, showFingerings = false, scale = 1.25, current = null, compact = false, onReady },
+  { abc, showNames = false, showFingerings = false, scale = 1.5, current = null, compact = false, onReady },
   ref,
 ) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -102,27 +102,55 @@ export const Staff = forwardRef<StaffHandle, Props>(function Staff(
     const ink = cssVar('--staff-ink') || '#000';
     const staffwidth = Math.max(320, (width - 40) / scale);
     const topPad = showFingerings ? 86 : 18;
-    const visual = (abcjs as any).renderAbc(host.current, abc, {
-      add_classes: true,
-      staffwidth,
-      scale,
-      foregroundColor: ink,
-      paddingtop: topPad,
-      paddingbottom: showNames ? 34 : 14,
-      paddingleft: 4,
-      paddingright: 4,
-      format: {
-        titlefont: 'Rubik 18',
-        gchordfont: 'Rubik 13 bold',
-        annotationfont: 'Rubik 12',
-        staffsep: showFingerings ? 150 : showNames ? 70 : 50,
-      },
-    })[0];
+    // Room between staff systems for note names / fingering diagrams. The
+    // directive is inserted after the X: line, so note offsets shift by `delta`.
+    const sep = showFingerings ? 150 : showNames ? 80 : 50;
+    const directive = `%%staffsep ${sep}\n`;
+    const firstNl = abc.indexOf('\n') + 1;
+    const src = abc.slice(0, firstNl) + directive + abc.slice(firstNl);
+    const delta = directive.length;
+    const render = (sw: number) =>
+      (abcjs as any).renderAbc(host.current, src, {
+        add_classes: true,
+        staffwidth: sw,
+        scale,
+        foregroundColor: ink,
+        paddingtop: topPad,
+        paddingbottom: showNames ? 34 : 14,
+        paddingleft: 4,
+        paddingright: 4,
+        ...(compact ? {} : { wrap: { minSpacing: 1.8, maxSpacing: 3.4, preferredMeasuresPerLine: 4 } }),
+        format: {
+          titlefont: 'Rubik 18',
+          gchordfont: 'Rubik 13 bold',
+          annotationfont: 'Rubik 12',
+        },
+      })[0];
+    let visual = render(staffwidth);
+    // With line wrapping abcjs may produce lines narrower than requested:
+    // one corrective pass makes the music use the available width.
+    const avail = (wrap.current?.clientWidth ?? width) - 24;
+    let svgEl = host.current.querySelector('svg');
+    if (svgEl && !compact) {
+      // width actually used by the staff lines (wrapping can leave the SVG half empty)
+      const staffEls = Array.from(host.current.querySelectorAll('.abcjs-staff')) as Element[];
+      const w0 = staffEls.reduce((m, e) => Math.max(m, e.getBoundingClientRect().width), 0);
+      if (w0 > 0 && w0 < avail * 0.9) {
+        visual = render(staffwidth * Math.min(2.2, (avail * 0.98) / w0));
+        svgEl = host.current.querySelector('svg');
+      }
+    }
+    // abcjs scales with a CSS transform: give the host the scaled size so the
+    // page layout makes room for the music.
+    if (svgEl) {
+      const r = svgEl.getBoundingClientRect();
+      host.current.style.height = `${Math.ceil(r.height)}px`;
+    }
     // map notes → SVG elements
     const elems: SVGElement[][] = score.notes.map((nt) => {
       const out: SVGElement[] = [];
       for (const ch of [nt.startChar, ...nt.tieChars]) {
-        const el = visual?.getElementFromChar?.(ch);
+        const el = visual?.getElementFromChar?.(ch + (ch >= firstNl ? delta : 0));
         const set = el?.abselem?.elemset as SVGElement[] | undefined;
         if (set) out.push(...set);
       }
