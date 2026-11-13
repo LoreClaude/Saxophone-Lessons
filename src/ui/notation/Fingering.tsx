@@ -6,7 +6,8 @@ import { KEYS, type Fingering, type SaxKey, extraKeys } from '../../music/finger
 type Shape =
   | { kind: 'circle'; cx: number; cy: number; r: number }
   | { kind: 'oval'; cx: number; cy: number; rx: number; ry: number; rot?: number }
-  | { kind: 'plate'; x: number; y: number; w: number; h: number; r?: number };
+  | { kind: 'plate'; x: number; y: number; w: number; h: number; r?: number }
+  | { kind: 'path'; d: string };
 
 /** Keys of the alto saxophone placed as on a printed fingering chart (viewBox 0 0 240 460), seen as the player sees the instrument. */
 const KEY_SHAPES: Record<SaxKey, Shape> = {
@@ -26,19 +27,19 @@ const KEY_SHAPES: Record<SaxKey, Shape> = {
   palmD: { kind: 'oval', cx: 92, cy: 70, rx: 4.4, ry: 10, rot: -25 },
   palmEb: { kind: 'oval', cx: 81, cy: 82, rx: 4.4, ry: 10, rot: -25 },
   palmF: { kind: 'oval', cx: 80, cy: 102, rx: 4.4, ry: 8.5, rot: -40 },
-  // left little finger table (flat plates): G♯ on top, then B | C♯, then B♭
-  Gs: { kind: 'plate', x: 46, y: 214, w: 42, h: 14, r: 6 },
-  lowB: { kind: 'plate', x: 38, y: 233, w: 18, h: 24, r: 4 },
-  lowCs: { kind: 'plate', x: 61, y: 233, w: 27, h: 24, r: 4 },
-  lowBb: { kind: 'plate', x: 38, y: 263, w: 50, h: 22, r: 10 },
+  // left little finger table, as on fingering charts: G♯ on top, C♯ | B, B♭ below
+  Gs: { kind: 'path', d: 'M 41 221 Q 41 212 52 212 L 78 212 Q 89 212 89 221 Q 89 229 80 229 Q 65 227 50 229 Q 41 229 41 221 Z' },
+  lowCs: { kind: 'path', d: 'M 52 234 L 60 234 L 65 257 L 52 257 Q 38 257 38 245.5 Q 38 234 52 234 Z' },
+  lowB: { kind: 'path', d: 'M 66 234 L 79 234 Q 89 234 89 245.5 Q 89 257 79 257 L 71 257 Z' },
+  lowBb: { kind: 'path', d: 'M 41 263 L 86 263 Q 89 263 88 267 Q 83 285 63.5 285 Q 44 285 39 267 Q 38 263 41 263 Z' },
   // side keys of the right hand: right of the lower keys, towards the bell
   sideE: { kind: 'oval', cx: 141, cy: 262, rx: 4.4, ry: 9.5, rot: 6 },
   sideC: { kind: 'oval', cx: 142, cy: 284, rx: 4.4, ry: 9.5, rot: 6 },
   sideBb: { kind: 'oval', cx: 143, cy: 306, rx: 4.4, ry: 9.5, rot: 6 },
   highFs: { kind: 'oval', cx: 144, cy: 337, rx: 4.4, ry: 8.5, rot: 6 },
-  // right little finger (flat plates): E♭ above, C below
-  lowEb: { kind: 'plate', x: 128, y: 364, w: 30, h: 15, r: 5 },
-  lowC: { kind: 'plate', x: 124, y: 385, w: 38, h: 22, r: 10 },
+  // right little finger: E♭ above, C below
+  lowEb: { kind: 'path', d: 'M 131 365 L 156 365 Q 161 365 161 371 Q 161 378 154 378 Q 143 376 133 378 Q 126 378 126 371 Q 126 365 131 365 Z' },
+  lowC: { kind: 'path', d: 'M 126 384 L 161 384 Q 164 384 163 388 Q 159 405 144.5 405 Q 130 405 125 388 Q 124 384 126 384 Z' },
 };
 
 // Neck, body, bow and bell as one outline (no seams between the parts).
@@ -64,6 +65,8 @@ function KeyShape({ k, on }: { k: SaxKey; on: boolean }) {
       <title>{`${KEYS[k].name} — ${KEYS[k].finger}`}</title>
       {s.kind === 'circle' ? (
         <circle cx={s.cx} cy={s.cy} r={s.r} {...paint} />
+      ) : s.kind === 'path' ? (
+        <path d={s.d} strokeLinejoin="round" {...paint} />
       ) : s.kind === 'plate' ? (
         <rect x={s.x} y={s.y} width={s.w} height={s.h} rx={s.r ?? 4} {...paint} />
       ) : (
@@ -91,12 +94,6 @@ export function FingeringDiagram({ fingering, size = 1 }: { fingering?: Fingerin
       <ellipse cx={193} cy={284} rx={31} ry={6} fill="var(--surface-solid)" stroke="var(--muted)" strokeWidth="2" />
       <path d={MOUTHPIECE} fill="var(--muted)" stroke="var(--muted)" strokeWidth="1.5" strokeLinejoin="round" />
       <path d="M 50 14 L 50 29.2 M 55 14.4 L 55 30.4" stroke="var(--surface-solid)" strokeWidth="2.2" />
-      {/* rollers between the little-finger plates */}
-      <g fill="var(--muted)">
-        <rect x={57} y={235} width={3.5} height={20} rx={1.7} />
-        <rect x={44} y={258.5} width={38} height={3.5} rx={1.7} />
-        <rect x={131} y={380.5} width={26} height={3.5} rx={1.7} />
-      </g>
       {(Object.keys(KEY_SHAPES) as SaxKey[]).map((k) => (
         <KeyShape key={k} k={k} on={on.has(k)} />
       ))}
