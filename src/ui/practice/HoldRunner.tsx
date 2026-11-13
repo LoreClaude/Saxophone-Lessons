@@ -7,11 +7,11 @@ import { audio } from '../../audio/engine';
 import type { Frame } from '../../audio/dsp';
 import { concertToWritten, fullNoteNameRu } from '../../music/notes';
 import { mainFingering } from '../../music/fingering';
-import { evaluateBreath, evaluateDynamics, evaluateLongTone, evaluateMouthpiece, evaluateVibrato, mergeResults, MOUTHPIECE_TARGET } from '../../practice/evaluate';
+import { evaluateBreath, evaluateDynamics, evaluateLongTone, evaluateMouthpiece, evaluateVibrato, mergeResults, MOUTHPIECE_TARGET, isHissFrame, roomLevel } from '../../practice/evaluate';
 import { useSettings, getSettings } from '../../store/settings';
 import { playDemo } from '../../lib/demo';
 import { cssVar } from '../../styles/themes';
-import { FingeringDiagram } from '../notation/Fingering';
+import { FingeringDiagram, FingeringLegend } from '../notation/Fingering';
 import { Kbd, ScoreRing } from '../components';
 import { FrameCollector, LivePitch, MicBanner, saveAttempt, useKey, useMic, type FinishedAttempt, type RunContext } from './common';
 
@@ -33,6 +33,8 @@ export function HoldRunner({ ex, ctx, onFinish }: { ex: HoldEx; ctx: RunContext;
   const raf = useRef(0);
   const graph = useRef<HTMLCanvasElement>(null);
   const cancelled = useRef(false);
+  /** Room noise level measured right before a breath exercise. */
+  const roomDb = useRef(getSettings().noiseFloorDb);
 
   useEffect(() => () => cancel(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -41,10 +43,7 @@ export function HoldRunner({ ex, ctx, onFinish }: { ex: HoldEx; ctx: RunContext;
   const isMouth = ex.kind === 'mouthpiece';
 
   const soundStarted = (f: Frame) => {
-    if (isBreath) {
-      const thr = Math.max(getSettings().noiseFloorDb + 8, -62);
-      return f.db > thr;
-    }
+    if (isBreath) return isHissFrame(f, roomDb.current);
     if (!f.voiced) return false;
     if (isMouth) return true;
     return target === null || Math.abs(concertToWritten(f.midi) - target) < 0.6;
@@ -93,7 +92,7 @@ export function HoldRunner({ ex, ctx, onFinish }: { ex: HoldEx; ctx: RunContext;
         r = evaluateLongTone(frames, ex.notes[k], seconds, tol);
         break;
       case 'breath':
-        r = evaluateBreath(frames, seconds, getSettings().noiseFloorDb, tol);
+        r = evaluateBreath(frames, seconds, roomDb.current, tol);
         break;
       case 'mouthpiece':
         r = evaluateMouthpiece(frames, ex.part, seconds, tol);
@@ -125,12 +124,18 @@ export function HoldRunner({ ex, ctx, onFinish }: { ex: HoldEx; ctx: RunContext;
     results.current = [];
     audio.startRecording();
     if (isBreath) {
-      // short guided inhale
+      // short guided inhale; meanwhile measure the room noise level
+      const room = new FrameCollector();
+      room.start();
       for (let i = 3; i > 0; i--) {
         setBreathCount(i);
         await new Promise((r) => setTimeout(r, 900));
-        if (cancelled.current) return;
+        if (cancelled.current) {
+          room.stop();
+          return;
+        }
       }
+      roomDb.current = roomLevel(room.stop(), getSettings().noiseFloorDb);
       setBreathCount(0);
     }
     runStep(0);
@@ -286,7 +291,8 @@ export function HoldRunner({ ex, ctx, onFinish }: { ex: HoldEx; ctx: RunContext;
           {!isBreath && <LivePitch target={target} />}
           {target !== null && (
             <div className="card center">
-              <FingeringDiagram fingering={mainFingering(target)} size={0.62} showLegend={false} />
+              <FingeringDiagram fingering={mainFingering(target)} size={0.95} showLegend={false} />
+              <FingeringLegend fingering={mainFingering(target)} />
             </div>
           )}
         </div>

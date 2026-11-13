@@ -13,7 +13,7 @@ import { useSettings } from '../../store/settings';
 import { playDemo } from '../../lib/demo';
 import { playSfx } from '../../lib/toast';
 import { Staff } from '../notation/Staff';
-import { FingeringDiagram } from '../notation/Fingering';
+import { FingeringDiagram, FingeringLegend } from '../notation/Fingering';
 import { Bar, Kbd } from '../components';
 import { FrameCollector, LivePitch, MicBanner, saveAttempt, useKey, useMic, type FinishedAttempt, type RunContext } from './common';
 
@@ -107,7 +107,7 @@ export function NotesRunner({ ex, ctx, onFinish }: { ex: NotesExercise; ctx: Run
         hold = null;
         setHoldPct(0);
         if (!wrong || wrong.midi !== Math.round(w)) wrong = { midi: Math.round(w), start: f.t, counted: false };
-        else if (!wrong.counted && f.t - wrong.start > 0.2) {
+        else if (!wrong.counted && f.t - wrong.start > 0.12) {
           wrong.counted = true;
           wrongCount++;
           setFlash('wrong');
@@ -173,7 +173,7 @@ export function NotesRunner({ ex, ctx, onFinish }: { ex: NotesExercise; ctx: Run
                     <Staff abc={buildAbc([{ midi: item.note, beats: 4 }], { key: 'C' }).replace('M:4/4', 'M:none')} scale={2} />
                   </div>
                 )}
-                {item.show === 'fingering' && <FingeringDiagram fingering={mainFingering(item.note)} size={0.85} />}
+                {item.show === 'fingering' && <FingeringDiagram fingering={mainFingering(item.note)} size={1.05} />}
                 <div style={{ width: 300 }}>
                   <Bar value={holdPct} />
                 </div>
@@ -200,7 +200,8 @@ export function NotesRunner({ ex, ctx, onFinish }: { ex: NotesExercise; ctx: Run
             <details className="card">
               <summary style={{ cursor: 'pointer' }}>Подсказка: аппликатура {noteNameRu(item.note)}</summary>
               <div className="center">
-                <FingeringDiagram fingering={mainFingering(item.note)} size={0.6} showLegend={false} />
+                <FingeringDiagram fingering={mainFingering(item.note)} size={0.95} showLegend={false} />
+                <FingeringLegend fingering={mainFingering(item.note)} />
               </div>
             </details>
           )}

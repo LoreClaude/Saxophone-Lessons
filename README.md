@@ -12,7 +12,7 @@
 
 ## Установка
 
-Скачайте `Saxophonia-Setup-1.0.0.exe` на вкладке **Releases** и запустите. Свежие сборки также доступны в **Actions → Windows build → Artifacts**. Подробности — в [руководстве](docs/GUIDE.md).
+Скачайте `Saxophonia-Setup-<версия>.exe` из последнего релиза на вкладке **Releases** и запустите. Свежие сборки также доступны в **Actions → Windows build → Artifacts**. Подробности — в [руководстве](docs/GUIDE.md).
 
 ## Разработка
 

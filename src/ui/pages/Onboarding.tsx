@@ -59,7 +59,7 @@ export function Onboarding() {
           <div className="col">
             <h2 className="center">Выберите оформление</h2>
             <div className="grid grid-3">
-              {(Object.keys(THEMES) as ThemeId[]).map((id) => {
+              {(Object.keys(THEMES) as ThemeId[]).filter((id) => !THEMES[id].unlockLevel).map((id) => {
                 const t = THEMES[id];
                 return (
                   <div

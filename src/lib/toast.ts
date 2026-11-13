@@ -16,10 +16,10 @@ export interface Toast {
 
 interface ToastStore {
   toasts: Toast[];
-  levelUp: { level: number; rank: string } | null;
+  levelUp: { level: number; rank: string; from: number } | null;
   push: (t: Omit<Toast, 'id'>) => void;
   dismiss: (id: number) => void;
-  setLevelUp: (v: { level: number; rank: string } | null) => void;
+  setLevelUp: (v: { level: number; rank: string; from: number } | null) => void;
 }
 
 let nextId = 1;
@@ -68,7 +68,7 @@ export function celebrate(o: AttemptOutcome | null) {
     playSfx('coin');
   }
   if (o.levelAfter > o.levelBefore) {
-    useToasts.getState().setLevelUp({ level: o.levelAfter, rank: rankFor(o.levelAfter) });
+    useToasts.getState().setLevelUp({ level: o.levelAfter, rank: rankFor(o.levelAfter), from: o.levelBefore });
     playSfx('levelup');
     burst(true);
   }

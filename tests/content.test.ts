@@ -113,3 +113,32 @@ describe('course content', () => {
     });
   }
 });
+
+import { BONUS_PIECES, THEME_REWARDS, REWARDS, rewardsBetween } from '../src/content/rewards';
+import { THEMES } from '../src/styles/themes';
+
+describe('level rewards', () => {
+  it('have unique ids and valid levels', () => {
+    const ids = REWARDS.map((r) => r.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    REWARDS.forEach((r) => expect(r.level).toBeGreaterThanOrEqual(2));
+  });
+  for (const p of BONUS_PIECES) {
+    it(`bonus melody «${p.title}» is playable`, () => {
+      const s = checkAbc(p.abc, `bonus/${p.id}`);
+      if (p.style && p.style !== 'none') {
+        expect(p.chords, 'style without chords').toBeTruthy();
+        checkChart(p.chords!, `bonus/${p.id}`);
+        const bars = parseChordChart(p.chords!).length;
+        expect(bars * s.beatsPerBar, `bonus/${p.id}: chord chart shorter than the tune`).toBeGreaterThanOrEqual(s.totalBeats);
+      }
+    });
+  }
+  it('reward themes exist and unlock at their level', () => {
+    for (const t of THEME_REWARDS) expect(THEMES[t.theme].unlockLevel).toBe(t.level);
+  });
+  it('lists rewards gained between two levels', () => {
+    expect(rewardsBetween(1, 2).map((r) => r.id)).toEqual(['lullaby']);
+    expect(rewardsBetween(9, 10).length).toBe(2);
+  });
+});

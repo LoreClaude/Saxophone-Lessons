@@ -16,7 +16,7 @@ import { useSettings, getSettings } from '../../store/settings';
 import { playDemo, stopDemo } from '../../lib/demo';
 import { playSfx } from '../../lib/toast';
 import { Staff, type StaffHandle, type NoteState } from '../notation/Staff';
-import { FingeringDiagram } from '../notation/Fingering';
+import { FingeringDiagram, FingeringLegend } from '../notation/Fingering';
 import { Seg, Toggle, Kbd } from '../components';
 import { LaneView } from './LaneView';
 import { Countdown, FrameCollector, JUDGE_TEXT, LivePitch, MicBanner, latencySec, saveAttempt, useKey, useMic, type FinishedAttempt, type RunContext } from './common';
@@ -270,7 +270,7 @@ export function SequenceRunner({ ex, ctx, onFinish }: { ex: SequenceExercise; ct
       } else {
         hold = null;
         if (!wrong || wrong.midi !== Math.round(w)) wrong = { midi: Math.round(w), start: f.t, counted: false };
-        else if (!wrong.counted && f.t - wrong.start > 0.18) {
+        else if (!wrong.counted && f.t - wrong.start > 0.12) {
           wrong.counted = true;
           wrongCount++;
         }
@@ -422,7 +422,8 @@ export function SequenceRunner({ ex, ctx, onFinish }: { ex: SequenceExercise; ct
             <div className="display" style={{ fontSize: 30, fontWeight: 800 }}>
               {curNote ? noteNameRu(curNote.midi) : '—'}
             </div>
-            {curNote && <FingeringDiagram fingering={mainFingering(curNote.midi)} size={0.8} showLegend={false} />}
+            {curNote && <FingeringDiagram fingering={mainFingering(curNote.midi)} size={0.95} showLegend={false} />}
+            {curNote && <FingeringLegend fingering={mainFingering(curNote.midi)} />}
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 // Color themes. Applied as CSS variables on <html>.
 
-export type ThemeId = 'neon' | 'brass' | 'ocean' | 'sunset' | 'sunny' | 'mint';
+export type ThemeId = 'neon' | 'brass' | 'ocean' | 'sunset' | 'sunny' | 'mint' | 'gold';
 
 export interface Theme {
   id: ThemeId;
@@ -8,6 +8,8 @@ export interface Theme {
   description: string;
   dark: boolean;
   vars: Record<string, string>;
+  /** Reward theme: available from this level. */
+  unlockLevel?: number;
 }
 
 const dark = (v: Record<string, string>) => ({
@@ -157,6 +159,29 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--bad': '#e5484d',
       '--glow': 'rgba(18,184,134,0.3)',
       '--staff-ink': '#102a33',
+    }),
+  },
+  gold: {
+    id: 'gold',
+    name: 'Золотой саксофон',
+    description: 'Награда 10 уровня: чёрный бархат и сияющее золото',
+    dark: true,
+    unlockLevel: 10,
+    vars: dark({
+      '--bg': '#0b0907',
+      '--bg-grad': 'radial-gradient(1100px 700px at 15% -10%, #3d2b0a 0%, transparent 60%), radial-gradient(900px 600px at 110% 110%, #2a1d05 0%, transparent 55%), linear-gradient(165deg, #0b0907 0%, #15100a 100%)',
+      '--panel': 'rgba(10,8,5,0.82)',
+      '--surface-solid': '#1c160d',
+      '--text': '#fff8e7',
+      '--muted': '#c9b88f',
+      '--accent': '#f5c542',
+      '--accent-2': '#ffdf80',
+      '--accent-3': '#ff9f43',
+      '--good': '#8be38b',
+      '--ok': '#ffd166',
+      '--bad': '#ff6b5e',
+      '--glow': 'rgba(245,197,66,0.5)',
+      '--staff-ink': '#fff8e7',
     }),
   },
 };

@@ -1,7 +1,7 @@
 {
   "name": "saxophonia",
   "productName": "Саксофония",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Саксофония — обучающее приложение для игры на альт-саксофоне с оценкой игры по микрофону и ИИ-наставником",
   "license": "MIT",
   "author": "LoreClaude",

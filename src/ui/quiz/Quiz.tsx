@@ -177,7 +177,7 @@ export function Quiz({ spec, onFinish, title = 'Тест' }: { spec: QuizQuestio
         )}
         {q.fingering !== undefined && (
           <div className="center">
-            <FingeringDiagram fingering={mainFingering(q.fingering)} size={0.8} />
+            <FingeringDiagram fingering={mainFingering(q.fingering)} size={1} />
           </div>
         )}
         {q.listen && (

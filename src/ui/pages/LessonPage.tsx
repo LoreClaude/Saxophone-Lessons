@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle2, Lock, Play, Volume2, Video, Lightbulb, AlertTriangle, Clock } from 'lucide-react';
 import { findLesson, lessonRequirementsMet, lessonStatus, exKey, allLessons } from '../../content/progression';
 import type { TheoryBlock } from '../../content/types';
@@ -8,13 +8,13 @@ import { navigate } from '../../lib/router';
 import { playDemo, stopDemo } from '../../lib/demo';
 import { celebrate, burst, playSfx } from '../../lib/toast';
 import { platform } from '../../lib/platform';
-import { mainFingering, fingeringsFor, describeFingering } from '../../music/fingering';
+import { mainFingering, fingeringsFor } from '../../music/fingering';
 import { fullNoteNameRu } from '../../music/notes';
 import { KIND_NAMES } from '../../practice/types';
 import { Markdown, Stars, Mascot } from '../components';
 import { Illustration } from '../illustrations';
 import { Staff } from '../notation/Staff';
-import { FingeringDiagram } from '../notation/Fingering';
+import { FingeringDiagram, FingeringLegend } from '../notation/Fingering';
 import { Quiz } from '../quiz/Quiz';
 
 export function LessonPage({ id }: { id: string }) {
@@ -23,6 +23,11 @@ export function LessonPage({ id }: { id: string }) {
   const recordQuiz = useProgress((s) => s.recordQuiz);
   const completeLesson = useProgress((s) => s.completeLesson);
   const [quizOpen, setQuizOpen] = useState(false);
+  const quizRef = useRef<HTMLDivElement>(null);
+  const openQuiz = () => {
+    setQuizOpen(true);
+    setTimeout(() => quizRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
 
   useEffect(() => () => stopDemo(), []);
   useEffect(() => {
@@ -87,7 +92,7 @@ export function LessonPage({ id }: { id: string }) {
             <Block key={i} block={b} />
           ))}
           {lesson.quiz?.length ? (
-            <div className="mt">
+            <div className="mt" ref={quizRef}>
               {quizOpen ? (
                 <Quiz
                   spec={lesson.quiz}
@@ -104,7 +109,7 @@ export function LessonPage({ id }: { id: string }) {
                       {lesson.quiz.length > 1 ? 'Небольшой тест по уроку.' : 'Один вопрос по уроку.'} Лучший результат: {lp?.quizBest ?? 0}%
                     </div>
                   </div>
-                  <button className="btn" onClick={() => setQuizOpen(true)}>
+                  <button className="btn" onClick={openQuiz}>
                     Начать тест
                   </button>
                 </div>
@@ -141,9 +146,18 @@ export function LessonPage({ id }: { id: string }) {
               })}
             </div>
             {lesson.quiz?.length ? (
-              <div className="row between mt small">
-                <span>Тест</span>
-                <span className={(lp?.quizBest ?? 0) >= 80 ? 'chip good' : 'chip'}>{lp?.quizBest ?? 0}%</span>
+              <div className="card hover mt" style={{ padding: 12 }} onClick={openQuiz}>
+                <div className="row between">
+                  <span className="tiny muted">Тест по уроку · нужно 80%</span>
+                  {(lp?.quizBest ?? 0) >= 80 ? <CheckCircle2 size={16} color="var(--good)" /> : null}
+                </div>
+                <div className="row between">
+                  <b>Проверь себя</b>
+                  <span className={(lp?.quizBest ?? 0) >= 80 ? 'chip good' : 'chip'}>{lp?.quizBest ?? 0}%</span>
+                </div>
+                <button className="btn" style={{ width: '100%', marginTop: 8 }} onClick={(e) => (e.stopPropagation(), openQuiz())}>
+                  Пройти тест
+                </button>
               </div>
             ) : null}
           </div>
@@ -214,10 +228,8 @@ export function Block({ block }: { block: TheoryBlock }) {
                 <b className="display" style={{ fontSize: 20 }}>
                   {fullNoteNameRu(m)}
                 </b>
-                <FingeringDiagram fingering={mainFingering(m)} size={0.62} showLegend={false} />
-                <div className="tiny muted" style={{ maxWidth: 170 }}>
-                  {describeFingering(mainFingering(m)!)}
-                </div>
+                <FingeringDiagram fingering={mainFingering(m)} size={0.9} showLegend={false} />
+                <FingeringLegend fingering={mainFingering(m)} />
                 {fingeringsFor(m).length > 1 && <div className="tiny" style={{ color: 'var(--accent-3)' }}>+ {fingeringsFor(m).length - 1} альтернативные</div>}
                 <button className="btn ghost" onClick={() => playDemo({ kind: 'note', note: m })}>
                   <Volume2 size={16} />

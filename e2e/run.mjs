@@ -72,6 +72,18 @@ console.log('rendered notes:', notes);
 if (notes < 10) fail('notation not rendered');
 await page.screenshot({ path: `${out}/sequence.png` });
 
+// 5) the content area scrolls in a small window
+await page.setViewportSize({ width: 1100, height: 650 });
+await page.goto(base + '#/lesson/m01-l1');
+await page.waitForTimeout(800);
+const scrolled = await page.evaluate(() => {
+  const c = document.getElementById('content');
+  c.scrollTop = 4000;
+  return c.scrollTop;
+});
+console.log('content scrollTop after scrolling:', scrolled);
+if (!(scrolled > 100)) fail('page does not scroll in a small window');
+
 if (errors.length) fail(`page errors: ${errors.join('; ')}`);
 console.log(process.exitCode ? 'E2E FAILED' : 'E2E OK');
 await browser.close();

@@ -58,7 +58,11 @@ export function finalize(
 ): EvalResult {
   const used = criteria.filter((c) => c.weight > 0);
   const wsum = used.reduce((a, c) => a + c.weight, 0) || 1;
-  const score = Math.round(used.reduce((a, c) => a + c.score * c.weight, 0) / wsum);
+  const weighted = Math.round(used.reduce((a, c) => a + c.score * c.weight, 0) / wsum);
+  // A clearly weak criterion must show in the total: it caps the score, so an
+  // uneven or partly wrong performance can never come out as 100 %.
+  const weakest = used.length ? Math.min(...used.map((c) => c.score)) : 100;
+  const score = Math.min(weighted, weakest + 30);
   const pass = passOverride ?? tol.passScore;
   const passed = score >= pass;
   const summary =
@@ -74,7 +78,7 @@ export function finalize(
   return {
     score,
     passed,
-    stars: starsFor(score, pass),
+    stars: Math.min(starsFor(score, pass), weakest >= 85 ? 3 : 2) as 0 | 1 | 2 | 3,
     criteria,
     summary,
     tips: extra.tips ?? [],
@@ -303,12 +307,13 @@ export function evaluateSequence(score: Score, frames: Frame[], o: SequenceEvalO
 
   const total = exp.length || 1;
   const correct = results.filter((r) => r.judgment === 'perfect' || r.judgment === 'good' || r.judgment === 'ok').length;
-  const pitchScore = Math.round((100 * correct) / total);
+  // unexpected notes (slips, extra notes) count as half an error each
+  const slips = detected.filter((d, j) => !used.has(j) && d.dur >= 0.12).length;
+  const pitchScore = Math.max(0, Math.round((100 * (correct - 0.5 * slips)) / total));
   const meanAbsCents = mean(correctCents.map(Math.abs));
   const meanCents = mean(correctCents);
   const meanAbsTiming = mean(correctTiming);
   const meanSignedTiming = mean(signedTiming);
-  const extras = detected.length - used.size;
 
   const criteria: Criterion[] = [
     {
@@ -316,7 +321,7 @@ export function evaluateSequence(score: Score, frames: Frame[], o: SequenceEvalO
       label: 'Ноты',
       score: pitchScore,
       weight: 0.36,
-      detail: `Верно сыграно ${correct} из ${exp.length} нот${extras > 0 ? `, лишних звуков: ${extras}` : ''}.`,
+      detail: `Верно сыграно ${correct} из ${exp.length} нот${slips > 0 ? `, лишних нот: ${slips}` : ''}.`,
     },
     {
       id: 'rhythm',
@@ -407,7 +412,7 @@ export function evaluateSequence(score: Score, frames: Frame[], o: SequenceEvalO
       correct,
       wrong: results.filter((r) => r.judgment === 'wrong').length,
       missed: results.filter((r) => r.judgment === 'miss').length,
-      extraNotes: extras,
+      extraNotes: slips,
       meanCents: round1(meanCents),
       meanAbsCents: round1(meanAbsCents),
       meanTimingMs: Math.round(meanSignedTiming * 1000) || 0,
@@ -582,28 +587,28 @@ export function evaluateLongTone(frames: Frame[], target: number, seconds: numbe
       id: 'duration',
       label: 'Длительность',
       score: mapUp(dur, 0, seconds * 0.95),
-      weight: 0.3,
+      weight: 0.25,
       detail: `Нота держалась ${dur.toFixed(1)} с из ${seconds} с.`,
     },
     {
       id: 'intonation',
       label: 'Интонация',
       score: cents.length ? Math.round(inTune * 100 * 0.6 + mapDown(Math.abs(mean(cents)), tol.centsPerfect, tol.centsGood * 2.5) * 0.4) : 0,
-      weight: 0.25,
+      weight: 0.2,
       detail: cents.length ? `В зоне точности ${Math.round(inTune * 100)}% времени, среднее отклонение ${Math.round(mean(cents))} центов.` : '—',
     },
     {
       id: 'stability',
       label: 'Ровность высоты',
-      score: cents.length ? mapDown(pitchStd, 4, 25) : 0,
-      weight: 0.2,
+      score: cents.length ? mapDown(pitchStd, 4, 18) : 0,
+      weight: 0.25,
       detail: `Колебание высоты — ${Math.round(pitchStd)} центов.`,
     },
     {
       id: 'loudness',
       label: 'Ровность громкости',
-      score: use.length ? mapDown(dbStd, 1.2, 6) : 0,
-      weight: 0.15,
+      score: use.length ? mapDown(dbStd, 1.0, 4.5) : 0,
+      weight: 0.2,
       detail: `Колебание громкости — ${dbStd.toFixed(1)} дБ.`,
     },
     {
@@ -656,21 +661,38 @@ export function mergeResults(results: EvalResult[], tol: Tolerances): EvalResult
 // Breath (exhale on "ссс")
 // ---------------------------------------------------------------------------
 
-export function evaluateBreath(frames: Frame[], seconds: number, noiseFloorDb: number, tol: Tolerances): EvalResult {
-  const thr = Math.max(noiseFloorDb + 8, -62);
-  const isHiss = (f: Frame) => f.db > thr && (!f.voiced || f.flatness > 0.2);
+/**
+ * An exhale on "ссс" is broadband, high-pitched noise clearly louder than the
+ * room. Room noise (fans, hum, the microphone's own hiss) must never count.
+ */
+export function isHissFrame(f: Frame, roomDb: number) {
+  const thr = Math.max(roomDb + 10, -60);
+  return f.db > thr && f.flatness > 0.12 && f.centroid > 1500 && !(f.voiced && f.clarity > 0.9);
+}
+
+/** Median level of frames recorded before the exercise (room noise). */
+export function roomLevel(frames: Frame[], fallbackDb: number) {
+  if (frames.length < 10) return fallbackDb;
+  // never let a noisy countdown push the threshold out of reach
+  return Math.min(-30, median(frames.map((f) => f.db)));
+}
+
+export function evaluateBreath(frames: Frame[], seconds: number, roomDb: number, tol: Tolerances): EvalResult {
+  const isHiss = (f: Frame) => isHissFrame(f, roomDb);
   const run = longestRun(frames, isHiss, 0.15);
   const dur = run.length ? run[run.length - 1].t - run[0].t : 0;
   const mid = run.filter((f) => f.t > run[0].t + 0.5 && f.t < run[run.length - 1].t - 0.5);
   const dbStd = std((mid.length > 10 ? mid : run).map((f) => f.db));
+  const level = run.length ? median(run.map((f) => f.db)) - roomDb : 0;
   const criteria: Criterion[] = [
-    { id: 'breath', label: 'Длина выдоха', score: mapUp(dur, 0, seconds * 0.95), weight: 0.7, detail: `Выдох длился ${dur.toFixed(1)} с из ${seconds} с.` },
-    { id: 'loudness', label: 'Ровность выдоха', score: run.length ? mapDown(dbStd, 1.5, 7) : 0, weight: 0.3, detail: `Колебание силы выдоха — ${dbStd.toFixed(1)} дБ.` },
+    { id: 'breath', label: 'Длина выдоха', score: mapUp(dur, 0, seconds * 0.95), weight: 0.6, detail: `Выдох длился ${dur.toFixed(1)} с из ${seconds} с.` },
+    { id: 'loudness', label: 'Ровность выдоха', score: run.length ? mapDown(dbStd, 1.0, 5) : 0, weight: 0.4, detail: `Колебание силы выдоха — ${dbStd.toFixed(1)} дБ.` },
   ];
   const tips: string[] = [];
-  if (dur < seconds * 0.8) tips.push('Вдыхайте глубже — животом, а не плечами. Выдыхайте узкой струёй, как будто через соломинку.');
-  if (dbStd > 4) tips.push('Выдох неровный. Держите мышцы живота в тонусе и выдыхайте с постоянным давлением.');
-  return finalize(criteria, tol, { durationSec: seconds, tips, metrics: { exhaleSec: round1(dur), loudnessStdDb: round1(dbStd) } });
+  if (!run.length) tips.push('Мы не услышали выдоха на «ссс». Поднесите микрофон ближе и выдыхайте отчётливее — так, чтобы шипение было громче шума в комнате.');
+  if (run.length && dur < seconds * 0.8) tips.push('Вдыхайте глубже — животом, а не плечами. Выдыхайте узкой струёй, как будто через соломинку.');
+  if (dbStd > 2.5) tips.push('Выдох неровный. Держите мышцы живота в тонусе и выдыхайте с постоянным давлением.');
+  return finalize(criteria, tol, { durationSec: seconds, tips, metrics: { exhaleSec: round1(dur), loudnessStdDb: round1(dbStd), aboveRoomDb: round1(level) } });
 }
 
 // ---------------------------------------------------------------------------
@@ -697,7 +719,7 @@ export function evaluateMouthpiece(frames: Frame[], part: 'mouthpiece' | 'neck',
       detail: run.length ? `Среднее отклонение от цели — ${Math.round(m)} центов.` : 'Звук около целевой высоты не найден.',
     },
     { id: 'duration', label: 'Длительность', score: mapUp(dur, 0, seconds * 0.9), weight: 0.25, detail: `Звук держался ${dur.toFixed(1)} с.` },
-    { id: 'stability', label: 'Ровность', score: run.length ? mapDown(std(cents), 8, 45) : 0, weight: 0.25, detail: `Колебание — ${Math.round(std(cents))} центов.` },
+    { id: 'stability', label: 'Ровность', score: run.length ? mapDown(std(cents), 6, 30) : 0, weight: 0.25, detail: `Колебание — ${Math.round(std(cents))} центов.` },
   ];
   const tips: string[] = [];
   const allMean = voiced.length ? median(voiced.map((f) => f.midi)) : NaN;

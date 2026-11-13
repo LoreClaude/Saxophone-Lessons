@@ -14,6 +14,7 @@ import {
   Flame,
   Target,
   Mic,
+  Gift,
 } from 'lucide-react';
 import { useRoute, navigate } from '../lib/router';
 import { useSettings } from '../store/settings';
@@ -44,12 +45,15 @@ import { WarmupPage } from './pages/WarmupPage';
 import { PiecePage } from './pages/PiecePage';
 import { UserLessonPage } from './pages/UserLessonPage';
 import { DiaryPage } from './pages/DiaryPage';
+import { RewardsPage, BonusPage } from './pages/RewardsPage';
+import { rewardsBetween } from '../content/rewards';
 
 const NAV: { path: string; label: string; icon: ReactElement; match: string }[] = [
   { path: '/', label: 'Путь к джазу', icon: <MapIcon size={20} />, match: '' },
   { path: '/practice', label: 'Практика', icon: <Dumbbell size={20} />, match: 'practice' },
   { path: '/tutor', label: 'Наставник', icon: <MessageCircle size={20} />, match: 'tutor' },
   { path: '/progress', label: 'Прогресс', icon: <BarChart3 size={20} />, match: 'progress' },
+  { path: '/rewards', label: 'Награды', icon: <Gift size={20} />, match: 'rewards' },
 ];
 const TOOLS: { path: string; label: string; icon: ReactElement; match: string }[] = [
   { path: '/tuner', label: 'Тюнер', icon: <Gauge size={20} />, match: 'tuner' },
@@ -153,6 +157,12 @@ export function App() {
     case 'settings':
       page = <SettingsPage />;
       break;
+    case 'rewards':
+      page = <RewardsPage />;
+      break;
+    case 'bonus':
+      page = <BonusPage id={p[1]} />;
+      break;
     default:
       page = <Home />;
   }
@@ -203,8 +213,42 @@ export function App() {
               {levelUp.level}
             </div>
             <h2>{levelUp.rank}</h2>
-            <p className="muted">Так держать! Каждый уровень — это часы честной практики.</p>
-            <button className="btn big" onClick={() => setLevelUp(null)}>
+            {rewardsBetween(levelUp.from, levelUp.level).length > 0 ? (
+              <div className="col" style={{ width: '100%', gap: 10 }}>
+                {rewardsBetween(levelUp.from, levelUp.level).map((r) => (
+                  <div key={r.id} className="card row between" style={{ padding: 14, borderColor: 'var(--accent-3)' }}>
+                    <div style={{ textAlign: 'left' }}>
+                      <div className="tiny muted">{r.kind === 'melody' ? '🎁 Открыта новая мелодия' : '🎁 Открыта новая тема оформления'}</div>
+                      <b>{r.title}</b>
+                    </div>
+                    {r.kind === 'melody' ? (
+                      <button
+                        className="btn"
+                        onClick={() => {
+                          setLevelUp(null);
+                          navigate(`/bonus/${r.id}`);
+                        }}
+                      >
+                        Сыграть
+                      </button>
+                    ) : (
+                      <button
+                        className="btn"
+                        onClick={() => {
+                          useSettings.getState().set({ theme: r.theme });
+                          setLevelUp(null);
+                        }}
+                      >
+                        Включить
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="muted">Так держать! Каждый уровень — это часы честной практики.</p>
+            )}
+            <button className="btn big mt" onClick={() => setLevelUp(null)}>
               Ура!
             </button>
           </div>

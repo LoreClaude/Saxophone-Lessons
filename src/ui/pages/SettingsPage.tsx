@@ -5,6 +5,7 @@ import { startSession } from '../../audio/backing';
 import { segmentNotes, median } from '../../audio/segment';
 import { useSettings } from '../../store/settings';
 import { useProgress, progressSnapshot } from '../../store/progress';
+import { levelFromXp } from '../../game/levels';
 import { db } from '../../store/db';
 import { THEMES, type ThemeId } from '../../styles/themes';
 import { platform, type ModelInfo } from '../../lib/platform';
@@ -280,17 +281,28 @@ function LatencySection() {
 
 function ThemeSection() {
   const s = useSettings();
+  const level = levelFromXp(useProgress((p) => p.xp)).level;
   return (
     <Section icon={<Palette />} title="Оформление">
       <div className="grid grid-3">
         {(Object.keys(THEMES) as ThemeId[]).map((id) => {
           const t = THEMES[id];
+          const locked = (t.unlockLevel ?? 0) > level;
           return (
             <div
               key={id}
               className="card hover"
-              onClick={() => s.set({ theme: id })}
-              style={{ padding: 14, background: t.vars['--bg'], backgroundImage: t.vars['--bg-grad'], color: t.vars['--text'], border: s.theme === id ? `2px solid ${t.vars['--accent']}` : undefined }}
+              onClick={() => !locked && s.set({ theme: id })}
+              title={locked ? `Откроется на ${t.unlockLevel} уровне` : t.description}
+              style={{
+                padding: 14,
+                background: t.vars['--bg'],
+                backgroundImage: t.vars['--bg-grad'],
+                color: t.vars['--text'],
+                border: s.theme === id ? `2px solid ${t.vars['--accent']}` : undefined,
+                opacity: locked ? 0.55 : 1,
+                cursor: locked ? 'not-allowed' : 'pointer',
+              }}
             >
               <div className="row" style={{ gap: 6 }}>
                 {['--accent', '--accent-2', '--accent-3', '--good'].map((v) => (
@@ -299,7 +311,7 @@ function ThemeSection() {
               </div>
               <b style={{ display: 'block', marginTop: 8 }}>{t.name}</b>
               <div className="tiny" style={{ opacity: 0.8 }}>
-                {t.description}
+                {locked ? `🔒 Награда: откроется на ${t.unlockLevel} уровне` : t.description}
               </div>
             </div>
           );

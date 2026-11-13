@@ -1,10 +1,12 @@
-import { Lock, Play, Trophy, Zap, CheckCircle2 } from 'lucide-react';
+import { Lock, Play, Trophy, Zap, CheckCircle2, Gift } from 'lucide-react';
 import { COURSE } from '../../content/course';
 import { allLessons, courseProgress, examStatus, lessonStatus, nextLesson, pendingExam, exKey } from '../../content/progression';
 import { useProgress } from '../../store/progress';
 import { useSettings } from '../../store/settings';
 import { navigate } from '../../lib/router';
 import { Bar, Mascot, Stars } from '../components';
+import { nextReward } from '../../content/rewards';
+import { levelFromXp, xpForLevel } from '../../game/levels';
 
 export function Home() {
   const progress = useProgress();
@@ -57,6 +59,23 @@ export function Home() {
           </div>
         </div>
       </div>
+
+      {(() => {
+        const lv = levelFromXp(progress.xp).level;
+        const nr = nextReward(lv);
+        if (!nr) return null;
+        const left = Math.max(0, xpForLevel(nr.level) - progress.xp);
+        return (
+          <div className="card hover mt row" style={{ gap: 14 }} onClick={() => navigate('/rewards')}>
+            <Gift color="var(--accent-3)" />
+            <div className="grow">
+              <div className="small muted">Следующая награда на {nr.level} уровне — осталось {left} XP</div>
+              <b>{nr.kind === 'melody' ? `🎵 Мелодия «${nr.title}»` : `🎨 ${nr.title}`}</b>
+            </div>
+            <span className="small muted">Все награды →</span>
+          </div>
+        );
+      })()}
 
       <div className="mt-l">
         {COURSE.map((m, mi) => {

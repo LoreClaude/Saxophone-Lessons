@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Volume2, Ear } from 'lucide-react';
 import { SAX_HIGH, SAX_LOW, concertToWritten, fullNoteNameRu, noteNameRu, octaveOf } from '../../music/notes';
-import { describeFingering, fingeringsFor } from '../../music/fingering';
+import { fingeringsFor } from '../../music/fingering';
 import { audio } from '../../audio/engine';
 import { playDemo } from '../../lib/demo';
 import { buildAbc } from '../../music/abc';
-import { FingeringDiagram } from '../notation/Fingering';
+import { FingeringDiagram, FingeringLegend } from '../notation/Fingering';
 import { Staff } from '../notation/Staff';
 import { Toggle } from '../components';
 import { useMic } from '../practice/common';
@@ -28,8 +28,8 @@ export function FingeringPage() {
           <div className="display" style={{ fontSize: 26, fontWeight: 800 }}>
             {fullNoteNameRu(note)}
           </div>
-          <FingeringDiagram fingering={f} />
-          <div className="small">{f ? describeFingering(f) : ''}</div>
+          <FingeringDiagram fingering={f} size={1.15} />
+          <FingeringLegend fingering={f} />
           {f?.note && <div className="small muted mt">{f.note}</div>}
           {fs.length > 1 && (
             <div className="row wrap mt" style={{ justifyContent: 'center' }}>
